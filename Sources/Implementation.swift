@@ -7,7 +7,21 @@
 
 import Foundation
 
-func getBuildSettings(workspace: String, scheme: String, verbose: Bool) throws -> BuildSettings {
+func defaultWorkspace() -> String? {
+    try? FileManager.default
+        .contentsOfDirectory(
+            at: URL(fileURLWithPath: FileManager.default.currentDirectoryPath),
+            includingPropertiesForKeys: nil
+        )
+        .filter { $0.lastPathComponent.hasSuffix("xcworkspace") }
+        .first
+        .map { $0.deletingPathExtension().lastPathComponent }
+}
+
+func getBuildSettings(workspace: String?, scheme: String, verbose: Bool) throws -> BuildSettings {
+    guard let workspace = workspace ?? defaultWorkspace()
+    else { throw ParserError.noWorkspace }
+    
     let buildSettingsJSON = shell(
         "xcodebuild -workspace \(workspace).xcworkspace -scheme \(scheme) -showBuildSettings -json 2>/dev/null",
         verbose: verbose

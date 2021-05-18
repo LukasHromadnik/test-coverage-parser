@@ -8,12 +8,12 @@
 import ArgumentParser
 
 struct TestCoverageParser: ParsableCommand {
-    @Option(name: .long, help: "Name of the workspace")
-    var workspace: String
-    
     @Option(name: .long, help: "Name of the scheme")
     var scheme: String
-    
+
+    @Option(name: .long, help: "Name of the workspace")
+    var workspace: String?
+        
     @Flag(help: "Set verbose output")
     var verbose = false
     
