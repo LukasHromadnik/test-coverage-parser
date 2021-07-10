@@ -52,10 +52,18 @@ func getTestResult(using buildSettings: BuildSettings, verbose: Bool) throws -> 
     let testContents = (try? FileManager.default.contentsOfDirectory(at: testDir, includingPropertiesForKeys: nil)) ?? []
     
     guard let testResult = testContents.filter({ $0.absoluteString.contains("xcresult") }).first
-    else { throw ParserError.noTestResults }
+    else { throw ParserError.noTestResults(testDir.path) }
+    
+    return try getTestResult(from: testResult.path, verbose: verbose)
+}
+
+func getTestResult(from path: String, verbose: Bool) throws -> TestResult {
+    guard FileManager.default.fileExists(atPath: path) else {
+        throw ParserError.noTestResults(path)
+    }
     
     let testResultJSON = shell(
-        "xcrun xccov view --report --json \(testResult.path) 2>/dev/null",
+        "xcrun xccov view --report --json " + path + " 2>/dev/null",
         verbose: verbose
     )
     let data = Data(testResultJSON.utf8)

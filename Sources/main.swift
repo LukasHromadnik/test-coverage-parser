@@ -9,17 +9,29 @@ import ArgumentParser
 
 struct TestCoverageParser: ParsableCommand {
     @Option(name: .long, help: "Name of the scheme")
-    var scheme: String
+    var scheme: String?
 
     @Option(name: .long, help: "Name of the workspace")
     var workspace: String?
+    
+    @Option(name: .long, help: "")
+    var resultBundlePath: String?
         
     @Flag(help: "Set verbose output")
     var verbose = false
     
     func run() throws {
-        let buildSettings = try getBuildSettings(workspace: workspace, scheme: scheme, verbose: verbose)
-        let result = try getTestResult(using: buildSettings, verbose: verbose)
+        let result: TestResult = try {
+            if let resultBundlePath = resultBundlePath {
+                return try getTestResult(from: resultBundlePath, verbose: verbose)
+            } else if let scheme = scheme {
+                let buildSettings = try getBuildSettings(workspace: workspace, scheme: scheme, verbose: verbose)
+                return try getTestResult(using: buildSettings, verbose: verbose)
+            } else {
+                throw ValidationError("One of arguments `--scheme` or `--result-bundle-path` is required")
+            }
+        }()
+        
         print(result.lineCoverage)
     }
 }
