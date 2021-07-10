@@ -38,7 +38,7 @@ func getBuildSettings(workspace: String?, scheme: String, verbose: Bool) throws 
     }
 }
 
-func getTestResult(using buildSettings: BuildSettings, verbose: Bool) throws -> TestResult {
+func getTestResultPath(using buildSettings: BuildSettings, verbose: Bool) throws -> String {
     guard let buildDirPath = buildSettings["BUILD_DIR"]
     else { throw ParserError.noBuildDir }
     
@@ -54,7 +54,7 @@ func getTestResult(using buildSettings: BuildSettings, verbose: Bool) throws -> 
     guard let testResult = testContents.filter({ $0.absoluteString.contains("xcresult") }).first
     else { throw ParserError.noTestResults(testDir.path) }
     
-    return try getTestResult(from: testResult.path, verbose: verbose)
+    return testResult.path
 }
 
 func getTestResult(from path: String, verbose: Bool) throws -> TestResult {
@@ -75,4 +75,19 @@ func getTestResult(from path: String, verbose: Bool) throws -> TestResult {
     } catch {
         throw ParserError.unknown(error)
     }
+}
+
+func getCoverage(using arguments: Arguments, verbose: Bool) throws {
+    let resultPath: String = try {
+        switch arguments {
+        case let .project(scheme, workspace):
+            let buildSettings = try getBuildSettings(workspace: workspace, scheme: scheme, verbose: verbose)
+            return try getTestResultPath(using: buildSettings, verbose: verbose)
+        case let .resultBundle(path): return path
+        }
+    }()
+    
+    let result = try getTestResult(from: resultPath, verbose: verbose)
+    
+    print(result.lineCoverage)
 }

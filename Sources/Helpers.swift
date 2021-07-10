@@ -36,3 +36,8 @@ func shell(_ command: String, verbose: Bool) -> String {
     
     return output
 }
+
+enum Arguments {
+    case project(scheme: String, workspace: String?)
+    case resultBundle(path: String)
+}
