@@ -8,19 +8,14 @@
 import ArgumentParser
 
 struct TestCoverageParser: ParsableCommand {
-    @Option(name: .long, help: "Name of the scheme")
-    var scheme: String
-
-    @Option(name: .long, help: "Name of the workspace")
-    var workspace: String?
-        
-    @Flag(help: "Set verbose output")
-    var verbose = false
-    
-    func run() throws {
-        let buildSettings = try getBuildSettings(workspace: workspace, scheme: scheme, verbose: verbose)
-        let result = try getTestResult(using: buildSettings, verbose: verbose)
-        print(result.lineCoverage)
+    static var configuration: CommandConfiguration {
+        CommandConfiguration(
+            subcommands: [
+                ParseFromProject.self,
+                ParseFromResultBundle.self
+            ],
+            defaultSubcommand: ParseFromProject.self
+        )
     }
 }
 

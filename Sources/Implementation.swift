@@ -38,7 +38,7 @@ func getBuildSettings(workspace: String?, scheme: String, verbose: Bool) throws 
     }
 }
 
-func getTestResult(using buildSettings: BuildSettings, verbose: Bool) throws -> TestResult {
+func getTestResultPath(using buildSettings: BuildSettings, verbose: Bool) throws -> String {
     guard let buildDirPath = buildSettings["BUILD_DIR"]
     else { throw ParserError.noBuildDir }
     
@@ -52,10 +52,18 @@ func getTestResult(using buildSettings: BuildSettings, verbose: Bool) throws -> 
     let testContents = (try? FileManager.default.contentsOfDirectory(at: testDir, includingPropertiesForKeys: nil)) ?? []
     
     guard let testResult = testContents.filter({ $0.absoluteString.contains("xcresult") }).first
-    else { throw ParserError.noTestResults }
+    else { throw ParserError.noTestResults(testDir.path) }
+    
+    return testResult.path
+}
+
+func getTestResult(from path: String, verbose: Bool) throws -> TestResult {
+    guard FileManager.default.fileExists(atPath: path) else {
+        throw ParserError.noTestResults(path)
+    }
     
     let testResultJSON = shell(
-        "xcrun xccov view --report --json \(testResult.path) 2>/dev/null",
+        "xcrun xccov view --report --json " + path + " 2>/dev/null",
         verbose: verbose
     )
     let data = Data(testResultJSON.utf8)
@@ -67,4 +75,19 @@ func getTestResult(using buildSettings: BuildSettings, verbose: Bool) throws -> 
     } catch {
         throw ParserError.unknown(error)
     }
+}
+
+func getCoverage(using arguments: Arguments, verbose: Bool) throws {
+    let resultPath: String = try {
+        switch arguments {
+        case let .project(scheme, workspace):
+            let buildSettings = try getBuildSettings(workspace: workspace, scheme: scheme, verbose: verbose)
+            return try getTestResultPath(using: buildSettings, verbose: verbose)
+        case let .resultBundle(path): return path
+        }
+    }()
+    
+    let result = try getTestResult(from: resultPath, verbose: verbose)
+    
+    print(result.lineCoverage)
 }
