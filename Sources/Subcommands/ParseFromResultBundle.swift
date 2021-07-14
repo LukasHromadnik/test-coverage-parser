@@ -5,7 +5,7 @@ struct ParseFromResultBundle: ParsableCommand {
         CommandConfiguration(commandName: "bundle")
     }
     
-    @Option(name: .long, help: "")
+    @Option(name: .long, help: "Path of .xcresult bundle file to be parsed")
     var resultBundlePath: String
     
     @Flag(help: "Set verbose output")
